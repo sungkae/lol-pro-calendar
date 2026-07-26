@@ -44,9 +44,10 @@ h1 .rift{color:var(--gold)}
 .seg button{background:var(--panel); color:var(--text); border:0; padding:7px 16px; cursor:pointer; font-size:14px}
 .seg button.on{background:var(--chip-on); color:var(--chip-on-text); font-weight:700}
 .mnav{display:flex; align-items:center; gap:4px}
-.mnav button, .theme-btn{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px;
+.mnav button, .theme-btn, .mnav-today{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px;
   height:34px; cursor:pointer; font-size:14px}
 .mnav button{width:34px; font-size:15px}
+.mnav-today{padding:0 12px; font-weight:700; color:var(--gold)}
 .theme-btn{padding:0 12px; margin-left:auto}
 .mnav .mon{font-weight:800; font-size:17px; min-width:130px; text-align:center;
   font-variant-numeric:tabular-nums}
@@ -135,6 +136,7 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
     <span class="mon" id="monLbl"></span>
     <button id="next" aria-label="다음 달">›</button>
   </div>
+  <button class="mnav-today" id="todayBtn">오늘</button>
   <input type="search" id="q" placeholder="팀 검색 (T1, Gen.G…)">
   <button class="theme-btn" id="themeBtn" title="테마 전환"></button>
 </div>
@@ -156,6 +158,7 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
 <div id="calView" class="cal">
   <div class="dow"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div>
   <div class="grid" id="grid"></div>
+  <div class="empty" id="calEmpty" style="display:none">이 달에는 표시할 경기가 없어요 — 필터를 확인하거나 다른 달로 이동해보세요</div>
 </div>
 <div id="listView" style="display:none"></div>
 
@@ -169,6 +172,9 @@ const API = "https://esports-api.lolesports.com/persisted/gw";
 const KEY = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z"; // lolesports.com 공개 클라이언트 키
 const RCOLOR = {"국제 대회":"#C8AA6E","한국":"#0AC8B9","중국":"#E8565C","EMEA":"#8A7BE8","북미":"#5C9EE8","퍼시픽":"#E8A05C","아메리카스":"#5CC46E","브라질":"#3DBB4E","일본":"#E87BAA","베트남":"#D9C445","오세아니아":"#45B8D9"};
 const rcolor = r => RCOLOR[r] || "#7C8A9C";
+// 달력 칸용 리그 축약명 — 긴 이름도 이름표는 항상 붙인다
+const SHORT = {"Esports World Cup":"EWC","월드 챔피언십":"Worlds","First Stand":"FST","KeSPA Cup":"KeSPA","LCK 챌린저스":"LCK CL","EMEA Masters":"EM","LoL Italian Tournament":"LIT","Liga Portuguesa":"LPLOL","Prime League":"PRM","Road of Legends":"RoL","La Ligue Française":"LFL","Hellenic Legends League":"HLL","Esports Balkan League":"EBL","Arabian League":"AL","Circuito Desafiante":"CD","Americas Cup":"AC","Hitpoint Masters":"HM","Rift Legends":"RL","Worlds Qualifying Series":"WQS","King's Duel":"KD"};
+const shortName = n => SHORT[n] || (n.length>8 ? n.slice(0,7)+"…" : n);
 const MAJOR = new Set(["worlds","msi","first_stand","ewc_lol","kespa_cup","lck","lpl","lec","lcs","lcp","lta_n","lta_s","lta_cross"]);
 
 let EVENTS = new Map();   // match id -> event
@@ -263,10 +269,18 @@ document.getElementById("q").oninput = e => { q = e.target.value.trim().toLowerC
 
 // ---------- views ----------
 const vCal=document.getElementById("vCal"), vList=document.getElementById("vList");
+function scrollToToday(){
+  const anchor = document.querySelector('#listView [data-fut="1"]');
+  if (anchor) anchor.scrollIntoView({block:"start"});
+}
 vCal.onclick = ()=>{view="cal"; vCal.classList.add("on"); vList.classList.remove("on"); render();};
-vList.onclick= ()=>{view="list"; vList.classList.add("on"); vCal.classList.remove("on"); render();};
+vList.onclick= ()=>{view="list"; vList.classList.add("on"); vCal.classList.remove("on"); render(); scrollToToday();};
 document.getElementById("prev").onclick = ()=>{ if(--curM<0){curM=11;curY--;} render(); };
 document.getElementById("next").onclick = ()=>{ if(++curM>11){curM=0;curY++;} render(); };
+document.getElementById("todayBtn").onclick = ()=>{
+  if (view==="cal"){ curY = now.getFullYear(); curM = now.getMonth(); render(); }
+  else scrollToToday();
+};
 
 function filtered(){
   return [...EVENTS.values()].filter(e => {
@@ -312,21 +326,23 @@ function renderCal(days){
   const startDow = new Date(curY,curM,1).getDay();
   const nDays = new Date(curY,curM+1,0).getDate();
   for (let i=0;i<startDow;i++){ const c=document.createElement("div"); c.className="cell dim"; grid.appendChild(c); }
+  let monthTotal = 0;
   for (let d=1;d<=nDays;d++){
     const key = curY+"-"+pad(curM+1)+"-"+pad(d);
     const list = days[key]||[];
+    monthTotal += list.length;
     const cell = document.createElement("div");
     cell.className = "cell"+(key===todayKey?" today":"");
     let h = `<div class="dnum">${d}</div>`;
     for (const e of list.slice(0,3)){
-      const lgShort = e.l.length>8 ? "" : esc(e.l);
-      h += `<div class="mini"><span class="dot" style="background:${rcolor(e.r)}"></span>${lgShort?`<span class="lg">${lgShort}</span> `:""}<span class="team">${esc(e.t[0]||"TBD")}·${esc(e.t[1]||"TBD")}</span></div>`;
+      h += `<div class="mini"><span class="dot" style="background:${rcolor(e.r)}"></span><span class="lg">${esc(shortName(e.l))}</span> <span class="team">${esc(e.t[0]||"TBD")}·${esc(e.t[1]||"TBD")}</span></div>`;
     }
     if (list.length>3) h += `<div class="more">+${list.length-3}경기</div>`;
     cell.innerHTML = h;
     if (list.length) cell.onclick = ()=>openDay(key, list);
     grid.appendChild(cell);
   }
+  document.getElementById("calEmpty").style.display = monthTotal ? "none" : "";
 }
 const dlg = document.getElementById("dayDlg");
 document.getElementById("dlgX").onclick = ()=>dlg.close();
@@ -350,8 +366,7 @@ function renderList(days){
       ${days[k].map(e=>matchHTML(e,true)).join("")}</div>`;
   }
   el.innerHTML = html;
-  const anchor = el.querySelector('[data-fut="1"]');
-  if (anchor) anchor.scrollIntoView({block:"start"});
+  // 스크롤 이동 없음 — 필터 조작 중 위치 유지. 이동은 뷰 전환/'오늘' 버튼에서만.
 }
 
 // ---------- data ----------
