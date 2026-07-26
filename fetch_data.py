@@ -24,6 +24,7 @@ leagues = get("/getLeagues", {"hl": "ko-KR"})["data"]["leagues"]
 cutoff = (datetime.now(timezone.utc) - timedelta(days=45)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 events = {}
+team_logos = {}  # 팀 이름 -> 로고 URL (https)
 for lg in leagues:
     data = get("/getSchedule", {"hl": "ko-KR", "leagueId": lg["id"]})
     if not data:
@@ -46,6 +47,9 @@ for lg in leagues:
         if ev.get("type") != "match" or not ev.get("match") or ev["startTime"] < cutoff:
             continue
         m = ev["match"]
+        for t in m.get("teams", []):
+            if t.get("image") and t.get("name") and t["name"] != "TBD":
+                team_logos[t["name"]] = t["image"].replace("http://", "https://")
         events[m["id"]] = {
             "id": m["id"], "s": ev["startTime"], "st": ev["state"],
             "l": lg["name"], "lg": lg["slug"], "r": lg["region"], "b": ev.get("blockName"),
@@ -59,6 +63,7 @@ for lg in leagues:
 out = {
     "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "leagues": [{"id": l["id"], "slug": l["slug"], "name": l["name"], "region": l["region"]} for l in leagues],
+    "teams": team_logos,
     "events": sorted(events.values(), key=lambda e: e["s"]),
 }
 json.dump(out, open("data.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

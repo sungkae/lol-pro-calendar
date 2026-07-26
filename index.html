@@ -18,6 +18,16 @@
     --chip-on:#C8AA6E; --chip-on-text:#0A1018; --today:#C8AA6E;
   }
 }
+:root[data-theme="light"]{
+  --bg:#F5F1E6; --panel:#FFFFFF; --panel2:#EFE9DA; --line:#DED5BE; --text:#1E2A38;
+  --muted:#6E7887; --gold:#8F6F2F; --teal:#067F74; --live:#C4373C;
+  --chip-on:#1E2A38; --chip-on-text:#F0E6D2; --today:#8F6F2F;
+}
+:root[data-theme="dark"]{
+  --bg:#0A1018; --panel:#101823; --panel2:#0D141E; --line:#1E2A38; --text:#F0E6D2;
+  --muted:#7C8A9C; --gold:#C8AA6E; --teal:#0AC8B9; --live:#E8565C;
+  --chip-on:#C8AA6E; --chip-on-text:#0A1018; --today:#C8AA6E;
+}
 *{box-sizing:border-box}
 body{background:var(--bg); color:var(--text);
   font:15px/1.5 "Segoe UI","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
@@ -34,23 +44,27 @@ h1 .rift{color:var(--gold)}
 .seg button{background:var(--panel); color:var(--text); border:0; padding:7px 16px; cursor:pointer; font-size:14px}
 .seg button.on{background:var(--chip-on); color:var(--chip-on-text); font-weight:700}
 .mnav{display:flex; align-items:center; gap:4px}
-.mnav button{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px;
-  width:34px; height:34px; cursor:pointer; font-size:15px}
+.mnav button, .theme-btn{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px;
+  height:34px; cursor:pointer; font-size:14px}
+.mnav button{width:34px; font-size:15px}
+.theme-btn{padding:0 12px; margin-left:auto}
 .mnav .mon{font-weight:800; font-size:17px; min-width:130px; text-align:center;
   font-variant-numeric:tabular-nums}
 input[type=search]{background:var(--panel); color:var(--text); border:1px solid var(--line);
   border-radius:8px; padding:7px 12px; font-size:14px; min-width:180px}
 input[type=search]:focus, button:focus-visible{outline:2px solid var(--teal); outline-offset:1px}
 .filters{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:16px}
-.fhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+.fhead{display:flex; flex-wrap:wrap; gap:6px 8px; justify-content:space-between; align-items:center; margin-bottom:8px}
 .fhead .lbl{font-size:11.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:700}
-.fhead .acts{display:flex; gap:8px}
+.fhead .acts{display:flex; flex-wrap:wrap; gap:8px}
 .fhead .acts button{background:none; border:0; color:var(--teal); cursor:pointer; font-size:12.5px; padding:2px 4px}
+.fhead .acts button.expander{color:var(--gold); font-weight:700}
 .rgroup{margin:10px 0 2px; font-size:12px; color:var(--gold); font-weight:700; letter-spacing:.05em}
 .chips{display:flex; flex-wrap:wrap; gap:6px}
 .chip{border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:999px;
   padding:4px 12px; font-size:13px; cursor:pointer; user-select:none}
 .chip.on{background:var(--chip-on); color:var(--chip-on-text); border-color:var(--chip-on); font-weight:600}
+.fhint{font-size:12px; color:var(--muted); margin-top:8px}
 .cal{background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden}
 .dow, .grid{display:grid; grid-template-columns:repeat(7,1fr)}
 .dow div{padding:8px 0; text-align:center; font-size:12px; font-weight:700; color:var(--muted);
@@ -78,9 +92,10 @@ input[type=search]:focus, button:focus-visible{outline:2px solid var(--teal); ou
   background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 14px; margin-bottom:6px}
 .match .time{font-variant-numeric:tabular-nums; font-weight:700; font-size:14px}
 .match .stripe{width:4px; height:26px; border-radius:2px}
-.match .vs{font-size:14.5px}
+.match .vs{font-size:14.5px; display:flex; align-items:center; gap:7px; flex-wrap:wrap}
 .match .vs b{font-weight:700}
-.match .vs .v{color:var(--muted); font-size:12px; margin:0 6px}
+.match .vs .v{color:var(--muted); font-size:12px}
+.tlogo{width:24px; height:24px; object-fit:contain; background:#0A1018; border-radius:5px; padding:2px; flex:none}
 .match .meta{text-align:right; font-size:12px; color:var(--muted); white-space:nowrap}
 .match .meta .lgname{font-weight:700; color:var(--text)}
 .match.done{opacity:.55}
@@ -97,6 +112,7 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
   .mini .team{display:none}
   .match{grid-template-columns:50px 8px 1fr}
   .match .meta{grid-column:3; text-align:left}
+  .theme-btn{margin-left:0}
 }
 @media (prefers-reduced-motion: no-preference){
   .chip,.cell{transition:background .12s, color .12s}
@@ -120,6 +136,7 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
     <button id="next" aria-label="다음 달">›</button>
   </div>
   <input type="search" id="q" placeholder="팀 검색 (T1, Gen.G…)">
+  <button class="theme-btn" id="themeBtn" title="테마 전환"></button>
 </div>
 
 <div class="filters">
@@ -129,9 +146,11 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
       <button id="selMajor">주요 리그만</button>
       <button id="selAll">전체 선택</button>
       <button id="selNone">전체 해제</button>
+      <button id="expander" class="expander"></button>
     </div>
   </div>
   <div id="chips"></div>
+  <div class="fhint" id="fhint"></div>
 </div>
 
 <div id="calView" class="cal">
@@ -153,8 +172,11 @@ const rcolor = r => RCOLOR[r] || "#7C8A9C";
 const MAJOR = new Set(["worlds","msi","first_stand","ewc_lol","kespa_cup","lck","lpl","lec","lcs","lcp","lta_n","lta_s","lta_cross"]);
 
 let EVENTS = new Map();   // match id -> event
-let LEAGUES = [];         // getLeagues 목록
-let sel = new Set(), view = "cal", q = "";
+let TEAMS = {};           // 팀 이름 -> 로고 URL
+// 저장은 '끈 리그' 목록으로 — 새로 등장하는 리그(월즈 대진 등)는 자동으로 켜짐
+let off = new Set(JSON.parse(localStorage.getItem("lolcal.off") || "[]"));
+let sel = new Set();      // 켜진 리그 = 전체 − off, syncSel()에서 계산
+let expanded = false, view = "cal", q = "";
 const now = new Date();
 let curY = now.getFullYear(), curM = now.getMonth();
 const statusEl = document.getElementById("status");
@@ -165,39 +187,78 @@ const todayKey = localKey(now);
 const fmtTime = d => pad(d.getHours())+":"+pad(d.getMinutes());
 const WD = ["일","월","화","수","목","금","토"];
 
+// ---------- theme ----------
+const THEMES = [["system","🖥️ 시스템"],["light","☀️ 라이트"],["dark","🌙 다크"]];
+let theme = localStorage.getItem("lolcal.theme") || "system";
+const themeBtn = document.getElementById("themeBtn");
+function applyTheme(){
+  if (theme==="system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", theme);
+  themeBtn.textContent = THEMES.find(t=>t[0]===theme)[1];
+  localStorage.setItem("lolcal.theme", theme);
+}
+themeBtn.onclick = ()=>{
+  const i = THEMES.findIndex(t=>t[0]===theme);
+  theme = THEMES[(i+1)%THEMES.length][0];
+  applyTheme();
+};
+applyTheme();
+
 // ---------- filters ----------
 const regionOrder = ["국제 대회","한국","중국","EMEA","북미","퍼시픽","아메리카스","브라질","일본","베트남","오세아니아"];
+function leaguesPresent(){
+  const present = {};
+  for (const e of EVENTS.values()){ present[e.lg] ||= {slug:e.lg, name:e.l, region:e.r, n:0}; present[e.lg].n++; }
+  return present;
+}
+function allSlugs(){ return Object.keys(leaguesPresent()); }
+function syncSel(){ sel = new Set(allSlugs().filter(s=>!off.has(s))); }
+function saveOff(){ localStorage.setItem("lolcal.off", JSON.stringify([...off])); }
+function chipEl(l){
+  const c = document.createElement("button");
+  c.className = "chip" + (sel.has(l.slug)?" on":"");
+  c.textContent = l.name; c.dataset.slug = l.slug;
+  c.onclick = () => {
+    off.has(l.slug) ? off.delete(l.slug) : off.add(l.slug);
+    saveOff(); syncSel(); buildChips(); render();
+  };
+  return c;
+}
 function buildChips(){
-  const present = {};   // slug -> {name, region} for leagues that have events
-  for (const e of EVENTS.values()) present[e.lg] ||= {slug:e.lg, name:e.l, region:e.r, n:0}, present[e.lg].n++;
+  const present = leaguesPresent();
   const byRegion = {};
   for (const l of Object.values(present)) (byRegion[l.region] ||= []).push(l);
   for (const r in byRegion) byRegion[r].sort((a,b)=>b.n-a.n);
   const regions = [...regionOrder.filter(r=>byRegion[r]), ...Object.keys(byRegion).filter(r=>!regionOrder.includes(r))];
   const chipsEl = document.getElementById("chips");
   chipsEl.innerHTML = "";
-  for (const r of regions){
-    const h = document.createElement("div"); h.className="rgroup"; h.textContent=r; chipsEl.appendChild(h);
-    const row = document.createElement("div"); row.className="chips";
-    for (const l of byRegion[r]){
-      const c = document.createElement("button");
-      c.className = "chip" + (sel.has(l.slug)?" on":"");
-      c.textContent = l.name; c.dataset.slug = l.slug;
-      c.onclick = () => { sel.has(l.slug) ? sel.delete(l.slug) : sel.add(l.slug); c.classList.toggle("on"); render(); };
-      row.appendChild(c);
+  const hidden = Object.values(present).filter(l=>!sel.has(l.slug)).length;
+  if (expanded){
+    for (const r of regions){
+      const h = document.createElement("div"); h.className="rgroup"; h.textContent=r; chipsEl.appendChild(h);
+      const row = document.createElement("div"); row.className="chips";
+      for (const l of byRegion[r]) row.appendChild(chipEl(l));
+      chipsEl.appendChild(row);
     }
+  } else {
+    // 접힌 상태: 켜져 있는 리그만 — 끄면 목록에서 사라지고, '전체 리그 보기'에서만 다시 켤 수 있음
+    const row = document.createElement("div"); row.className="chips";
+    for (const r of regions) for (const l of byRegion[r]) if (sel.has(l.slug)) row.appendChild(chipEl(l));
     chipsEl.appendChild(row);
+    if (!row.children.length) row.innerHTML = '<span class="fhint">모든 리그가 꺼져 있어요 — 전체 리그 보기에서 켜주세요</span>';
   }
+  document.getElementById("expander").textContent = expanded ? "접기 ▴" : "전체 리그 보기 ▾";
+  document.getElementById("fhint").textContent =
+    !expanded && hidden ? `숨긴 리그 ${hidden}개 — 다시 켜려면 '전체 리그 보기'를 눌러주세요` : "";
 }
-function allSlugs(){ return [...new Set([...EVENTS.values()].map(e=>e.lg))]; }
 function setSel(pred){
-  sel = new Set(allSlugs().filter(pred));
-  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on", sel.has(c.dataset.slug)));
-  render();
+  off = new Set(allSlugs().filter(s=>!pred(s)));
+  saveOff(); syncSel(); buildChips(); render();
 }
 document.getElementById("selMajor").onclick = ()=>setSel(s=>MAJOR.has(s));
 document.getElementById("selAll").onclick  = ()=>setSel(()=>true);
 document.getElementById("selNone").onclick = ()=>setSel(()=>false);
+document.getElementById("expander").onclick = ()=>{ expanded = !expanded; buildChips(); };
 document.getElementById("q").oninput = e => { q = e.target.value.trim().toLowerCase(); render(); };
 
 // ---------- views ----------
@@ -224,13 +285,17 @@ function byDay(evs){
   return m;
 }
 function esc(s){ return String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function sideHTML(name){
+  if (!name) return "<b>TBD</b>";
+  const u = TEAMS[name];
+  return (u?`<img class="tlogo" loading="lazy" alt="" src="${esc(u)}" onerror="this.remove()">`:"")+`<b>${esc(name)}</b>`;
+}
 function matchHTML(e, compactDone){
   const done = e.st==="completed", live = e.st==="inProgress";
-  const teams = e.tn[0] ? `<b>${esc(e.tn[0])}</b><span class="v">vs</span><b>${esc(e.tn[1]||"TBD")}</b>` : "TBD";
   return `<div class="match${done&&compactDone?" done":""}">
     <span class="time">${live?'<span class="badge-live">LIVE</span>':fmtTime(e.d)}</span>
     <span class="stripe" style="background:${rcolor(e.r)}"></span>
-    <span class="vs">${teams}</span>
+    <span class="vs">${sideHTML(e.tn[0])}<span class="v">vs</span>${sideHTML(e.tn[1])}</span>
     <span class="meta"><span class="lgname">${esc(e.l)}</span> · ${esc(e.b||"")}${e.bo?" · BO"+e.bo:""}${done?" · 종료":""}</span>
   </div>`;
 }
@@ -301,11 +366,9 @@ function ingest(events){
   for (const e of events) EVENTS.set(e.id, e);
 }
 async function liveRefresh(){
-  // 리그 정보 + 지금 시점부터의 일정을 API에서 직접 갱신
   const lg = await api("/getLeagues", {hl:"ko-KR"});
-  LEAGUES = lg.data.leagues;
-  const meta = Object.fromEntries(LEAGUES.map(l=>[l.slug, l]));
-  const ids = LEAGUES.map(l=>l.id).join(",");
+  const meta = Object.fromEntries(lg.data.leagues.map(l=>[l.slug, l]));
+  const ids = lg.data.leagues.map(l=>l.id).join(",");
   let fresh = [], token = null;
   for (let hop=0; hop<20; hop++){
     const p = {hl:"ko-KR", leagueId:ids};
@@ -320,6 +383,9 @@ async function liveRefresh(){
   for (const ev of fresh){
     if (ev.type!=="match" || !ev.match) continue;
     const m = meta[ev.league?.slug] || {};
+    for (const t of ev.match.teams||[]){
+      if (t.image && t.name && t.name!=="TBD") TEAMS[t.name] = t.image.replace("http://","https://");
+    }
     slim.push({
       id: ev.match.id, s: ev.startTime, st: ev.state,
       l: m.name || ev.league.name, lg: m.slug || ev.league.slug, r: m.region || "기타",
@@ -330,21 +396,22 @@ async function liveRefresh(){
     });
   }
   ingest(slim);
+  syncSel();  // 새로 등장한 리그(예: 월즈 대진 공개)는 off에 없으므로 자동으로 켜짐
   return slim.length;
 }
 async function boot(){
   let snapOk = false;
   try {
     const snap = await (await fetch("data.json")).json();
+    TEAMS = snap.teams || {};
     ingest(snap.events);
-    sel = new Set(allSlugs().filter(s=>MAJOR.has(s)));
+    syncSel();
     buildChips(); render();
     statusEl.textContent = "스냅샷 "+snap.generated.slice(0,10)+" · 라이브 갱신 중…";
     snapOk = true;
   } catch(e){ statusEl.textContent = "스냅샷 로드 실패 · 라이브 갱신 중…"; }
   try {
-    const n = await liveRefresh();
-    if (!snapOk) sel = new Set(allSlugs().filter(s=>MAJOR.has(s)));
+    await liveRefresh();
     buildChips(); render();
     const t = new Date();
     statusEl.innerHTML = '<span class="ok">● 라이브</span> '+t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate())+" "+fmtTime(t)+" 갱신 · 시간은 내 시간대";
