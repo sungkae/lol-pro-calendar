@@ -25,10 +25,12 @@ cutoff = (datetime.now(timezone.utc) - timedelta(days=45)).strftime("%Y-%m-%dT%H
 
 events = {}
 team_logos = {}  # 팀 이름 -> 로고 URL (https)
+failed = []
 for lg in leagues:
     data = get("/getSchedule", {"hl": "ko-KR", "leagueId": lg["id"]})
     if not data:
         print(lg["slug"], "FAILED")
+        failed.append(lg["slug"])
         continue
     sched = data["data"]["schedule"]
     evs = sched.get("events") or []
@@ -59,6 +61,13 @@ for lg in leagues:
         }
     print(lg["slug"], len(evs), "->", len(events))
     time.sleep(0.4)
+
+# 무결성 가드: 축소된 스냅샷이 조용히 커밋되는 것을 방지
+# ponytail: 임계값 하드코딩(실패 3개·이벤트 500) — 리그 구조가 크게 바뀌면 조정
+if len(failed) >= 3 or len(events) < 500:
+    import sys
+    print(f"ABORT: failed={failed}, events={len(events)} — 스냅샷이 불완전해 커밋하지 않음")
+    sys.exit(1)
 
 out = {
     "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

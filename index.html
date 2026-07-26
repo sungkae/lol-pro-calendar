@@ -167,7 +167,7 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
 
 <dialog id="dayDlg"><button class="x" id="dlgX" aria-label="닫기">×</button><h2 id="dlgTitle"></h2><div id="dlgBody"></div></dialog>
 
-<footer>LoL Esports 공식 일정 · 시간은 내 기기 시간대 · 페이지를 열 때마다 자동 갱신</footer>
+<footer>LoL Esports 공식 일정(lolesports.com 게시 대회 기준 — 중국 2군 LDL·아카데미 리그는 미제공) · 시간은 내 기기 시간대 · 자동 갱신</footer>
 </div>
 
 <script>
@@ -186,13 +186,13 @@ let TEAMS = {};           // 팀 이름 -> 로고 URL
 let off = new Set(JSON.parse(localStorage.getItem("lolcal.off") || "[]"));
 let sel = new Set();      // 켜진 리그 = 전체 − off, syncSel()에서 계산
 let expanded = false, view = "cal", q = "";
-const now = new Date();
+let now = new Date();
 let curY = now.getFullYear(), curM = now.getMonth();
 const statusEl = document.getElementById("status");
 
 const pad = n => String(n).padStart(2,"0");
 const localKey = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-const todayKey = localKey(now);
+let todayKey = localKey(now);
 const fmtTime = d => pad(d.getHours())+":"+pad(d.getMinutes());
 const WD = ["일","월","화","수","목","금","토"];
 
@@ -281,7 +281,8 @@ vList.onclick= ()=>{view="list"; vList.classList.add("on"); vCal.classList.remov
 document.getElementById("prev").onclick = ()=>{ if(--curM<0){curM=11;curY--;} render(); };
 document.getElementById("next").onclick = ()=>{ if(++curM>11){curM=0;curY++;} render(); };
 document.getElementById("todayBtn").onclick = ()=>{
-  if (view==="cal"){ curY = now.getFullYear(); curM = now.getMonth(); render(); }
+  const t = new Date();
+  if (view==="cal"){ curY = t.getFullYear(); curM = t.getMonth(); render(); }
   else scrollToToday();
 };
 
@@ -317,6 +318,7 @@ function matchHTML(e, compactDone){
   </div>`;
 }
 function render(){
+  now = new Date(); todayKey = localKey(now);  // 자정 넘긴 탭에서도 '오늘' 경계 최신 유지
   const days = byDay(filtered());
   document.getElementById("mnav").style.visibility = view==="cal" ? "visible" : "hidden";
   document.getElementById("calView").style.display = view==="cal" ? "" : "none";
@@ -401,15 +403,24 @@ async function liveRefresh(){
   const lg = await api("/getLeagues", {hl:"ko-KR"});
   const meta = Object.fromEntries(lg.data.leagues.map(l=>[l.slug, l]));
   const ids = lg.data.leagues.map(l=>l.id).join(",");
-  let fresh = [], token = null;
-  for (let hop=0; hop<20; hop++){
-    const p = {hl:"ko-KR", leagueId:ids};
-    if (token) p.pageToken = token;
-    const d = await api("/getSchedule", p);
-    const s = d.data.schedule;
+  // 첫 페이지(현재 시점 주변) → newer로 미래 전체, older로 과거 45일 백필
+  const first = (await api("/getSchedule", {hl:"ko-KR", leagueId:ids})).data.schedule;
+  let fresh = (first.events || []).slice();
+  let token = (first.pages||{}).newer;
+  for (let hop=0; hop<20 && token; hop++){
+    const s = (await api("/getSchedule", {hl:"ko-KR", leagueId:ids, pageToken:token})).data.schedule;
     fresh = fresh.concat(s.events || []);
     token = (s.pages||{}).newer;
-    if (!token) break;
+  }
+  // 과거 백필: 스냅샷이 낡거나 로드에 실패해도 최근 45일은 라이브로 복원
+  const cutoffIso = new Date(Date.now() - 45*864e5).toISOString();
+  let older = (first.pages||{}).older;
+  for (let hop=0; hop<15 && older; hop++){
+    const s = (await api("/getSchedule", {hl:"ko-KR", leagueId:ids, pageToken:older})).data.schedule;
+    const evs = s.events || [];
+    fresh = fresh.concat(evs);
+    older = (s.pages||{}).older;
+    if (evs[0] && evs[0].startTime < cutoffIso) break;
   }
   const slim = [];
   for (const ev of fresh){
@@ -431,8 +442,21 @@ async function liveRefresh(){
   syncSel();  // 새로 등장한 리그(예: 월즈 대진 공개)는 off에 없으므로 자동으로 켜짐
   return slim.length;
 }
+let snapOk = false, lastLive = 0, liveBusy = false;
+async function doLive(){
+  if (liveBusy) return;
+  liveBusy = true;
+  try {
+    await liveRefresh();
+    lastLive = Date.now();
+    buildChips(); render();
+    const t = new Date();
+    statusEl.innerHTML = '<span class="ok">● 라이브</span> '+t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate())+" "+fmtTime(t)+" 갱신 · 시간은 내 시간대";
+  } catch(e){
+    statusEl.textContent = snapOk ? "오프라인 스냅샷 (라이브 갱신 실패)" : "데이터를 불러오지 못했어요 — 새로고침 해주세요";
+  } finally { liveBusy = false; }
+}
 async function boot(){
-  let snapOk = false;
   try {
     const snap = await (await fetch("data.json")).json();
     TEAMS = snap.teams || {};
@@ -442,15 +466,12 @@ async function boot(){
     statusEl.textContent = "스냅샷 "+snap.generated.slice(0,10)+" · 라이브 갱신 중…";
     snapOk = true;
   } catch(e){ statusEl.textContent = "스냅샷 로드 실패 · 라이브 갱신 중…"; }
-  try {
-    await liveRefresh();
-    buildChips(); render();
-    const t = new Date();
-    statusEl.innerHTML = '<span class="ok">● 라이브</span> '+t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate())+" "+fmtTime(t)+" 갱신 · 시간은 내 시간대";
-  } catch(e){
-    statusEl.textContent = snapOk ? "오프라인 스냅샷 (라이브 갱신 실패)" : "데이터를 불러오지 못했어요 — 새로고침 해주세요";
-  }
+  await doLive();
 }
+// 열어둔 탭도 최신 유지: 탭 복귀 시 + 10분 주기
+const staleRefresh = ()=>{ if (document.visibilityState==="visible" && Date.now()-lastLive > 10*60*1000) doLive(); };
+document.addEventListener("visibilitychange", staleRefresh);
+setInterval(staleRefresh, 5*60*1000);
 boot();
 </script>
 </body>
