@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoL 프로 대회 캘린더</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🗓️%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#F5F1E6; --panel:#FFFFFF; --panel2:#EFE9DA; --line:#DED5BE; --text:#1E2A38;
+  --muted:#6E7887; --gold:#8F6F2F; --teal:#067F74; --live:#C4373C;
+  --chip-on:#1E2A38; --chip-on-text:#F0E6D2; --today:#8F6F2F;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0A1018; --panel:#101823; --panel2:#0D141E; --line:#1E2A38; --text:#F0E6D2;
+    --muted:#7C8A9C; --gold:#C8AA6E; --teal:#0AC8B9; --live:#E8565C;
+    --chip-on:#C8AA6E; --chip-on-text:#0A1018; --today:#C8AA6E;
+  }
+}
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--text);
+  font:15px/1.5 "Segoe UI","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  margin:0; padding:0 16px 48px;}
+.wrap{max-width:1180px; margin:0 auto}
+header{display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 16px; padding:28px 0 6px;
+  border-bottom:2px solid var(--gold);}
+h1{font-size:26px; font-weight:800; letter-spacing:-.5px; margin:0}
+h1 .rift{color:var(--gold)}
+.snap{color:var(--muted); font-size:12.5px}
+.snap .ok{color:var(--teal); font-weight:700}
+.toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:14px 0}
+.seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{background:var(--panel); color:var(--text); border:0; padding:7px 16px; cursor:pointer; font-size:14px}
+.seg button.on{background:var(--chip-on); color:var(--chip-on-text); font-weight:700}
+.mnav{display:flex; align-items:center; gap:4px}
+.mnav button{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px;
+  width:34px; height:34px; cursor:pointer; font-size:15px}
+.mnav .mon{font-weight:800; font-size:17px; min-width:130px; text-align:center;
+  font-variant-numeric:tabular-nums}
+input[type=search]{background:var(--panel); color:var(--text); border:1px solid var(--line);
+  border-radius:8px; padding:7px 12px; font-size:14px; min-width:180px}
+input[type=search]:focus, button:focus-visible{outline:2px solid var(--teal); outline-offset:1px}
+.filters{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:16px}
+.fhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+.fhead .lbl{font-size:11.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:700}
+.fhead .acts{display:flex; gap:8px}
+.fhead .acts button{background:none; border:0; color:var(--teal); cursor:pointer; font-size:12.5px; padding:2px 4px}
+.rgroup{margin:10px 0 2px; font-size:12px; color:var(--gold); font-weight:700; letter-spacing:.05em}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:999px;
+  padding:4px 12px; font-size:13px; cursor:pointer; user-select:none}
+.chip.on{background:var(--chip-on); color:var(--chip-on-text); border-color:var(--chip-on); font-weight:600}
+.cal{background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.dow, .grid{display:grid; grid-template-columns:repeat(7,1fr)}
+.dow div{padding:8px 0; text-align:center; font-size:12px; font-weight:700; color:var(--muted);
+  border-bottom:1px solid var(--line); letter-spacing:.08em}
+.dow div:first-child{color:var(--live)}
+.cell{min-height:104px; border-bottom:1px solid var(--line); border-right:1px solid var(--line);
+  padding:6px; cursor:pointer; overflow:hidden}
+.cell:nth-child(7n){border-right:0}
+.cell:hover{background:var(--panel2)}
+.cell.dim{opacity:.35; cursor:default}
+.cell .dnum{font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; margin-bottom:4px}
+.cell.today .dnum{display:inline-block; background:var(--today); color:var(--bg);
+  border-radius:6px; padding:0 6px}
+.mini{display:flex; align-items:center; gap:5px; font-size:11.5px; line-height:1.35;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text)}
+.mini .dot{width:7px; height:7px; border-radius:2px; flex:none}
+.mini .lg{color:var(--muted); font-weight:600}
+.more{font-size:11px; color:var(--teal); margin-top:2px}
+.day{margin-bottom:22px}
+.day h3{font-size:15px; font-weight:800; margin:0 0 8px; padding-bottom:5px;
+  border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums}
+.day h3 .wd{color:var(--muted); font-weight:600; font-size:13px}
+.day h3.todayh{color:var(--gold)}
+.match{display:grid; grid-template-columns:58px 10px 1fr auto; gap:10px; align-items:center;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 14px; margin-bottom:6px}
+.match .time{font-variant-numeric:tabular-nums; font-weight:700; font-size:14px}
+.match .stripe{width:4px; height:26px; border-radius:2px}
+.match .vs{font-size:14.5px}
+.match .vs b{font-weight:700}
+.match .vs .v{color:var(--muted); font-size:12px; margin:0 6px}
+.match .meta{text-align:right; font-size:12px; color:var(--muted); white-space:nowrap}
+.match .meta .lgname{font-weight:700; color:var(--text)}
+.match.done{opacity:.55}
+.badge-live{color:var(--live); font-weight:800; font-size:11px; letter-spacing:.08em}
+.empty{color:var(--muted); text-align:center; padding:48px 0}
+dialog{background:var(--panel); color:var(--text); border:1px solid var(--gold); border-radius:14px;
+  padding:18px 20px; max-width:560px; width:92%; max-height:80vh; overflow-y:auto}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+dialog h2{margin:0 0 12px; font-size:18px; font-variant-numeric:tabular-nums}
+dialog .x{float:right; background:none; border:0; color:var(--muted); font-size:20px; cursor:pointer}
+footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
+@media (max-width:720px){
+  .cell{min-height:64px}
+  .mini .team{display:none}
+  .match{grid-template-columns:50px 8px 1fr}
+  .match .meta{grid-column:3; text-align:left}
+}
+@media (prefers-reduced-motion: no-preference){
+  .chip,.cell{transition:background .12s, color .12s}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>LoL <span class="rift">프로 대회</span> 캘린더</h1>
+  <span class="snap" id="status">불러오는 중…</span>
+</header>
+
+<div class="toolbar">
+  <div class="seg" role="tablist">
+    <button id="vCal" class="on">월별</button><button id="vList">목록</button>
+  </div>
+  <div class="mnav" id="mnav">
+    <button id="prev" aria-label="이전 달">‹</button>
+    <span class="mon" id="monLbl"></span>
+    <button id="next" aria-label="다음 달">›</button>
+  </div>
+  <input type="search" id="q" placeholder="팀 검색 (T1, Gen.G…)">
+</div>
+
+<div class="filters">
+  <div class="fhead">
+    <span class="lbl">리그 필터</span>
+    <div class="acts">
+      <button id="selMajor">주요 리그만</button>
+      <button id="selAll">전체 선택</button>
+      <button id="selNone">전체 해제</button>
+    </div>
+  </div>
+  <div id="chips"></div>
+</div>
+
+<div id="calView" class="cal">
+  <div class="dow"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div>
+  <div class="grid" id="grid"></div>
+</div>
+<div id="listView" style="display:none"></div>
+
+<dialog id="dayDlg"><button class="x" id="dlgX" aria-label="닫기">×</button><h2 id="dlgTitle"></h2><div id="dlgBody"></div></dialog>
+
+<footer>LoL Esports 공식 일정 · 시간은 내 기기 시간대 · 페이지를 열 때마다 자동 갱신</footer>
+</div>
+
+<script>
+const API = "https://esports-api.lolesports.com/persisted/gw";
+const KEY = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z"; // lolesports.com 공개 클라이언트 키
+const RCOLOR = {"국제 대회":"#C8AA6E","한국":"#0AC8B9","중국":"#E8565C","EMEA":"#8A7BE8","북미":"#5C9EE8","퍼시픽":"#E8A05C","아메리카스":"#5CC46E","브라질":"#3DBB4E","일본":"#E87BAA","베트남":"#D9C445","오세아니아":"#45B8D9"};
+const rcolor = r => RCOLOR[r] || "#7C8A9C";
+const MAJOR = new Set(["worlds","msi","first_stand","ewc_lol","kespa_cup","lck","lpl","lec","lcs","lcp","lta_n","lta_s","lta_cross"]);
+
+let EVENTS = new Map();   // match id -> event
+let LEAGUES = [];         // getLeagues 목록
+let sel = new Set(), view = "cal", q = "";
+const now = new Date();
+let curY = now.getFullYear(), curM = now.getMonth();
+const statusEl = document.getElementById("status");
+
+const pad = n => String(n).padStart(2,"0");
+const localKey = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayKey = localKey(now);
+const fmtTime = d => pad(d.getHours())+":"+pad(d.getMinutes());
+const WD = ["일","월","화","수","목","금","토"];
+
+// ---------- filters ----------
+const regionOrder = ["국제 대회","한국","중국","EMEA","북미","퍼시픽","아메리카스","브라질","일본","베트남","오세아니아"];
+function buildChips(){
+  const present = {};   // slug -> {name, region} for leagues that have events
+  for (const e of EVENTS.values()) present[e.lg] ||= {slug:e.lg, name:e.l, region:e.r, n:0}, present[e.lg].n++;
+  const byRegion = {};
+  for (const l of Object.values(present)) (byRegion[l.region] ||= []).push(l);
+  for (const r in byRegion) byRegion[r].sort((a,b)=>b.n-a.n);
+  const regions = [...regionOrder.filter(r=>byRegion[r]), ...Object.keys(byRegion).filter(r=>!regionOrder.includes(r))];
+  const chipsEl = document.getElementById("chips");
+  chipsEl.innerHTML = "";
+  for (const r of regions){
+    const h = document.createElement("div"); h.className="rgroup"; h.textContent=r; chipsEl.appendChild(h);
+    const row = document.createElement("div"); row.className="chips";
+    for (const l of byRegion[r]){
+      const c = document.createElement("button");
+      c.className = "chip" + (sel.has(l.slug)?" on":"");
+      c.textContent = l.name; c.dataset.slug = l.slug;
+      c.onclick = () => { sel.has(l.slug) ? sel.delete(l.slug) : sel.add(l.slug); c.classList.toggle("on"); render(); };
+      row.appendChild(c);
+    }
+    chipsEl.appendChild(row);
+  }
+}
+function allSlugs(){ return [...new Set([...EVENTS.values()].map(e=>e.lg))]; }
+function setSel(pred){
+  sel = new Set(allSlugs().filter(pred));
+  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on", sel.has(c.dataset.slug)));
+  render();
+}
+document.getElementById("selMajor").onclick = ()=>setSel(s=>MAJOR.has(s));
+document.getElementById("selAll").onclick  = ()=>setSel(()=>true);
+document.getElementById("selNone").onclick = ()=>setSel(()=>false);
+document.getElementById("q").oninput = e => { q = e.target.value.trim().toLowerCase(); render(); };
+
+// ---------- views ----------
+const vCal=document.getElementById("vCal"), vList=document.getElementById("vList");
+vCal.onclick = ()=>{view="cal"; vCal.classList.add("on"); vList.classList.remove("on"); render();};
+vList.onclick= ()=>{view="list"; vList.classList.add("on"); vCal.classList.remove("on"); render();};
+document.getElementById("prev").onclick = ()=>{ if(--curM<0){curM=11;curY--;} render(); };
+document.getElementById("next").onclick = ()=>{ if(++curM>11){curM=0;curY++;} render(); };
+
+function filtered(){
+  return [...EVENTS.values()].filter(e => {
+    if (!sel.has(e.lg)) return false;
+    if (q && !e.t.concat(e.tn).some(s=>s && s.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+function byDay(evs){
+  const m = {};
+  for (const e of evs){
+    const d = new Date(e.s);
+    (m[localKey(d)] ||= []).push({...e, d});
+  }
+  for (const k in m) m[k].sort((a,b)=>a.d-b.d);
+  return m;
+}
+function esc(s){ return String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function matchHTML(e, compactDone){
+  const done = e.st==="completed", live = e.st==="inProgress";
+  const teams = e.tn[0] ? `<b>${esc(e.tn[0])}</b><span class="v">vs</span><b>${esc(e.tn[1]||"TBD")}</b>` : "TBD";
+  return `<div class="match${done&&compactDone?" done":""}">
+    <span class="time">${live?'<span class="badge-live">LIVE</span>':fmtTime(e.d)}</span>
+    <span class="stripe" style="background:${rcolor(e.r)}"></span>
+    <span class="vs">${teams}</span>
+    <span class="meta"><span class="lgname">${esc(e.l)}</span> · ${esc(e.b||"")}${e.bo?" · BO"+e.bo:""}${done?" · 종료":""}</span>
+  </div>`;
+}
+function render(){
+  const days = byDay(filtered());
+  document.getElementById("mnav").style.visibility = view==="cal" ? "visible" : "hidden";
+  document.getElementById("calView").style.display = view==="cal" ? "" : "none";
+  document.getElementById("listView").style.display = view==="list" ? "" : "none";
+  if (view==="cal") renderCal(days); else renderList(days);
+}
+function renderCal(days){
+  document.getElementById("monLbl").textContent = curY+"년 "+(curM+1)+"월";
+  const grid = document.getElementById("grid"); grid.innerHTML="";
+  const startDow = new Date(curY,curM,1).getDay();
+  const nDays = new Date(curY,curM+1,0).getDate();
+  for (let i=0;i<startDow;i++){ const c=document.createElement("div"); c.className="cell dim"; grid.appendChild(c); }
+  for (let d=1;d<=nDays;d++){
+    const key = curY+"-"+pad(curM+1)+"-"+pad(d);
+    const list = days[key]||[];
+    const cell = document.createElement("div");
+    cell.className = "cell"+(key===todayKey?" today":"");
+    let h = `<div class="dnum">${d}</div>`;
+    for (const e of list.slice(0,3)){
+      const lgShort = e.l.length>8 ? "" : esc(e.l);
+      h += `<div class="mini"><span class="dot" style="background:${rcolor(e.r)}"></span>${lgShort?`<span class="lg">${lgShort}</span> `:""}<span class="team">${esc(e.t[0]||"TBD")}·${esc(e.t[1]||"TBD")}</span></div>`;
+    }
+    if (list.length>3) h += `<div class="more">+${list.length-3}경기</div>`;
+    cell.innerHTML = h;
+    if (list.length) cell.onclick = ()=>openDay(key, list);
+    grid.appendChild(cell);
+  }
+}
+const dlg = document.getElementById("dayDlg");
+document.getElementById("dlgX").onclick = ()=>dlg.close();
+dlg.onclick = e => { if (e.target===dlg) dlg.close(); };
+function openDay(key, list){
+  const d = new Date(key+"T12:00:00");
+  document.getElementById("dlgTitle").textContent = key.replaceAll("-",".")+" ("+WD[d.getDay()]+") · "+list.length+"경기";
+  document.getElementById("dlgBody").innerHTML = list.map(e=>matchHTML(e,false)).join("");
+  dlg.showModal();
+}
+function renderList(days){
+  const el = document.getElementById("listView");
+  const keys = Object.keys(days).sort();
+  if (!keys.length){ el.innerHTML = '<div class="empty">선택한 필터에 해당하는 경기가 없어요</div>'; return; }
+  let html = "";
+  for (const k of keys){
+    const d = new Date(k+"T12:00:00");
+    const isToday = k===todayKey;
+    html += `<div class="day" ${k>=todayKey?`data-fut="1"`:""}>
+      <h3 class="${isToday?"todayh":""}">${k.replaceAll("-",".")} <span class="wd">(${WD[d.getDay()]})${isToday?" · 오늘":""}</span></h3>
+      ${days[k].map(e=>matchHTML(e,true)).join("")}</div>`;
+  }
+  el.innerHTML = html;
+  const anchor = el.querySelector('[data-fut="1"]');
+  if (anchor) anchor.scrollIntoView({block:"start"});
+}
+
+// ---------- data ----------
+async function api(path, params){
+  const u = new URL(API+path);
+  for (const k in params) u.searchParams.set(k, params[k]);
+  const r = await fetch(u, {headers:{"x-api-key":KEY}});
+  if (!r.ok) throw new Error(path+" "+r.status);
+  return r.json();
+}
+function ingest(events){
+  for (const e of events) EVENTS.set(e.id, e);
+}
+async function liveRefresh(){
+  // 리그 정보 + 지금 시점부터의 일정을 API에서 직접 갱신
+  const lg = await api("/getLeagues", {hl:"ko-KR"});
+  LEAGUES = lg.data.leagues;
+  const meta = Object.fromEntries(LEAGUES.map(l=>[l.slug, l]));
+  const ids = LEAGUES.map(l=>l.id).join(",");
+  let fresh = [], token = null;
+  for (let hop=0; hop<20; hop++){
+    const p = {hl:"ko-KR", leagueId:ids};
+    if (token) p.pageToken = token;
+    const d = await api("/getSchedule", p);
+    const s = d.data.schedule;
+    fresh = fresh.concat(s.events || []);
+    token = (s.pages||{}).newer;
+    if (!token) break;
+  }
+  const slim = [];
+  for (const ev of fresh){
+    if (ev.type!=="match" || !ev.match) continue;
+    const m = meta[ev.league?.slug] || {};
+    slim.push({
+      id: ev.match.id, s: ev.startTime, st: ev.state,
+      l: m.name || ev.league.name, lg: m.slug || ev.league.slug, r: m.region || "기타",
+      b: ev.blockName,
+      t: (ev.match.teams||[]).map(t=>t.code),
+      tn: (ev.match.teams||[]).map(t=>t.name),
+      bo: (ev.match.strategy||{}).count,
+    });
+  }
+  ingest(slim);
+  return slim.length;
+}
+async function boot(){
+  let snapOk = false;
+  try {
+    const snap = await (await fetch("data.json")).json();
+    ingest(snap.events);
+    sel = new Set(allSlugs().filter(s=>MAJOR.has(s)));
+    buildChips(); render();
+    statusEl.textContent = "스냅샷 "+snap.generated.slice(0,10)+" · 라이브 갱신 중…";
+    snapOk = true;
+  } catch(e){ statusEl.textContent = "스냅샷 로드 실패 · 라이브 갱신 중…"; }
+  try {
+    const n = await liveRefresh();
+    if (!snapOk) sel = new Set(allSlugs().filter(s=>MAJOR.has(s)));
+    buildChips(); render();
+    const t = new Date();
+    statusEl.innerHTML = '<span class="ok">● 라이브</span> '+t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate())+" "+fmtTime(t)+" 갱신 · 시간은 내 시간대";
+  } catch(e){
+    statusEl.textContent = snapOk ? "오프라인 스냅샷 (라이브 갱신 실패)" : "데이터를 불러오지 못했어요 — 새로고침 해주세요";
+  }
+}
+boot();
+</script>
+</body>
+</html>
