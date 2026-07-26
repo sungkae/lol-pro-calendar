@@ -54,7 +54,7 @@ h1 .rift{color:var(--gold)}
 input[type=search]{background:var(--panel); color:var(--text); border:1px solid var(--line);
   border-radius:8px; padding:7px 12px; font-size:14px; min-width:180px}
 input[type=search]:focus, button:focus-visible{outline:2px solid var(--teal); outline-offset:1px}
-.filters{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:16px}
+.filters{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:14px}
 .fhead{display:flex; flex-wrap:wrap; gap:6px 8px; justify-content:space-between; align-items:center; margin-bottom:8px}
 .fhead .lbl{font-size:11.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:700}
 .fhead .acts{display:flex; flex-wrap:wrap; gap:8px}
@@ -130,20 +130,6 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
   <span class="snap" id="status">불러오는 중…</span>
 </header>
 
-<div class="toolbar">
-  <div class="seg" role="tablist">
-    <button id="vCal" class="on">월별</button><button id="vList">목록</button>
-  </div>
-  <div class="mnav" id="mnav">
-    <button id="prev" aria-label="이전 달">‹</button>
-    <span class="mon" id="monLbl"></span>
-    <button id="next" aria-label="다음 달">›</button>
-  </div>
-  <button class="mnav-today" id="todayBtn">오늘</button>
-  <input type="search" id="q" placeholder="팀 검색 (T1, Gen.G…)">
-  <button class="theme-btn" id="themeBtn" title="테마 전환"></button>
-</div>
-
 <div class="filters">
   <div class="fhead">
     <span class="lbl">리그 필터</span>
@@ -156,6 +142,20 @@ footer{margin-top:28px; color:var(--muted); font-size:12px; text-align:center}
   </div>
   <div id="chips"></div>
   <div class="fhint" id="fhint"></div>
+</div>
+
+<div class="toolbar">
+  <div class="seg" role="tablist">
+    <button id="vCal" class="on">월별</button><button id="vList">목록</button>
+  </div>
+  <div class="mnav" id="mnav">
+    <button id="prev" aria-label="이전 달">‹</button>
+    <span class="mon" id="monLbl"></span>
+    <button id="next" aria-label="다음 달">›</button>
+  </div>
+  <button class="mnav-today" id="todayBtn">오늘</button>
+  <input type="search" id="q" placeholder="팀 검색 (T1, Gen.G…)">
+  <button class="theme-btn" id="themeBtn" title="테마 전환"></button>
 </div>
 
 <div id="calView" class="cal">
