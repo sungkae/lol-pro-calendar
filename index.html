@@ -442,7 +442,7 @@ async function liveRefresh(){
   syncSel();  // 새로 등장한 리그(예: 월즈 대진 공개)는 off에 없으므로 자동으로 켜짐
   return slim.length;
 }
-let snapOk = false, lastLive = 0, liveBusy = false;
+let lastLive = 0, liveBusy = false;
 async function doLive(){
   if (liveBusy) return;
   liveBusy = true;
@@ -453,26 +453,16 @@ async function doLive(){
     const t = new Date();
     statusEl.innerHTML = '<span class="ok">● 라이브</span> '+t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate())+" "+fmtTime(t)+" 갱신 · 시간은 내 시간대";
   } catch(e){
-    statusEl.textContent = snapOk ? "오프라인 스냅샷 (라이브 갱신 실패)" : "데이터를 불러오지 못했어요 — 새로고침 해주세요";
+    statusEl.textContent = EVENTS.size
+      ? "갱신 실패 — 마지막으로 받은 일정을 보여주는 중, 자동으로 다시 시도해요"
+      : "라이엇 API에 연결하지 못했어요 — 자동으로 다시 시도해요 (또는 새로고침)";
   } finally { liveBusy = false; }
 }
-async function boot(){
-  try {
-    const snap = await (await fetch("data.json")).json();
-    TEAMS = snap.teams || {};
-    ingest(snap.events);
-    syncSel();
-    buildChips(); render();
-    statusEl.textContent = "스냅샷 "+snap.generated.slice(0,10)+" · 라이브 갱신 중…";
-    snapOk = true;
-  } catch(e){ statusEl.textContent = "스냅샷 로드 실패 · 라이브 갱신 중…"; }
-  await doLive();
-}
-// 열어둔 탭도 최신 유지: 탭 복귀 시 + 10분 주기
+// 열어둔 탭도 최신 유지: 탭 복귀 시 + 주기 재시도 (실패 시 lastLive가 안 갱신돼 다음 주기에 재시도됨)
 const staleRefresh = ()=>{ if (document.visibilityState==="visible" && Date.now()-lastLive > 10*60*1000) doLive(); };
 document.addEventListener("visibilitychange", staleRefresh);
 setInterval(staleRefresh, 5*60*1000);
-boot();
+doLive();
 </script>
 </body>
 </html>
